@@ -1,5 +1,7 @@
 # Project Setup Guide
 
+dev added..!
+
 This repo has two apps:
 
 - Backend: FastAPI API server
