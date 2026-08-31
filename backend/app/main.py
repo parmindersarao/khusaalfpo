@@ -1,5 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
+from app.db.database import Base, engine
+from app.models.user import User
+from app.models.rejectedUsers import RejectedUser
+from app.api.v1.routers import router as api_router 
 
 
 app = FastAPI()
@@ -12,6 +16,12 @@ app.add_middleware(
     allow_methods = ["*"], # allowing all HTTP methods
     allow_headers = ["*"], # allowing all headers
 )
+
+app.include_router(api_router) # including the api router to the app so that all the endpoints defined in the api router can be accessed from the app
+
+@app.on_event("startup")
+def startup():
+    Base.metadata.create_all(bind=engine)
 
 @app.get("/api/v1/health")
 def check_health():
