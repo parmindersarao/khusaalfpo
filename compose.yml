@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:16
+    restart: always
+    container_name: khushaalfpodb
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - khusaalfpo_db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+volumes:
+  khusaalfpo_db_data:
