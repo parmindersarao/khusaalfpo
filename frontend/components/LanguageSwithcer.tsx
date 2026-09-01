@@ -46,6 +46,8 @@ export default function LanguageSwitcher() {
         alt="Change language"
         width={20}
         height={20}
+        className="h-5 w-5 shrink-0"
+        style={{ width: "20px", height: "20px" }}
       />
       <span>{languageNames[locale]}</span>
     </button>
