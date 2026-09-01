@@ -7,6 +7,7 @@ from app.schemas.user import RegisterUser
 
 router = APIRouter(prefix="/register", tags=["v1"])
 
+
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def register_user(user: RegisterUser, db: Session = Depends(get_db)):
     """
@@ -23,7 +24,13 @@ async def register_user(user: RegisterUser, db: Session = Depends(get_db)):
     ).first()
 
     if existing_user:
-        return {"status": "error", "message": "User already exists."}
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "status": "error",
+                "message": "User is already registered. For further queries, please contact admin.",
+            },
+        )
 
     # Check if the user already exists in the rejectedusers table
     existing_rejected_user = db.query(RejectedUser).filter(
@@ -33,7 +40,13 @@ async def register_user(user: RegisterUser, db: Session = Depends(get_db)):
     ).first()
 
     if existing_rejected_user:
-        return {"status": "error", "message": "User has been rejected previously."}
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "status": "error",
+                "message": "User has been rejected previously. For further queries, please contact admin.",
+            },
+        )
 
     # Create a new user instance
     new_user = User(
@@ -47,7 +60,7 @@ async def register_user(user: RegisterUser, db: Session = Depends(get_db)):
         address=user.address,
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
-        status="pending"
+        status="pending",
     )
 
     # Add the new user to the database
