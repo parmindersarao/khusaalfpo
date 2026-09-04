@@ -1,215 +1,1059 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTranslations } from "next-intl";
+import { Toaster, toast } from "react-hot-toast";
+
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SearchableDropdown from "@/components/SearchableDropdown";
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:8000";
+const BACKEND_URL = process.env.BACKEND_URL ?? "";
+
+type FormData = {
+  name: string;
+  email: string;
+  mobile_number: string;
+  adhaar_number: string;
+  state: string;
+  city: string;
+  pincode: string;
+  address: string;
+};
+
+type FormErrors = Partial<
+  Record<keyof FormData, string>
+>;
+
+const initialForm: FormData = {
+  name: "",
+  email: "",
+  mobile_number: "",
+  adhaar_number: "",
+  state: "",
+  city: "",
+  pincode: "",
+  address: "",
+};
+
+const PINCODE_STATE_MAP: Readonly<
+  Record<string, readonly string[]>
+> = Object.freeze({
+  "11": ["Delhi"],
+  "12": ["Haryana"],
+  "13": ["Haryana"],
+  "14": ["Punjab"],
+  "15": ["Punjab"],
+  "16": ["Chandigarh"],
+  "17": ["Himachal Pradesh"],
+  "18": ["Jammu and Kashmir", "Ladakh"],
+  "19": ["Jammu and Kashmir", "Ladakh"],
+  "20": ["Uttar Pradesh", "Uttarakhand"],
+  "21": ["Uttar Pradesh", "Uttarakhand"],
+  "22": ["Uttar Pradesh", "Uttarakhand"],
+  "23": ["Uttar Pradesh", "Uttarakhand"],
+  "24": ["Uttar Pradesh", "Uttarakhand"],
+  "25": ["Uttar Pradesh", "Uttarakhand"],
+  "26": ["Uttar Pradesh", "Uttarakhand"],
+  "27": ["Uttar Pradesh", "Uttarakhand"],
+  "28": ["Uttar Pradesh", "Uttarakhand"],
+  "30": ["Rajasthan"],
+  "31": ["Rajasthan"],
+  "32": ["Rajasthan"],
+  "33": ["Rajasthan"],
+  "34": ["Rajasthan"],
+  "36": ["Gujarat", "Dadra and Nagar Haveli and Daman and Diu"],
+  "37": ["Gujarat", "Dadra and Nagar Haveli and Daman and Diu"],
+  "38": ["Gujarat", "Dadra and Nagar Haveli and Daman and Diu"],
+  "39": ["Gujarat", "Dadra and Nagar Haveli and Daman and Diu"],
+  "40": ["Maharashtra", "Goa"],
+  "41": ["Maharashtra", "Goa"],
+  "42": ["Maharashtra", "Goa"],
+  "43": ["Maharashtra", "Goa"],
+  "44": ["Maharashtra", "Goa"],
+  "45": ["Madhya Pradesh", "Chhattisgarh"],
+  "46": ["Madhya Pradesh", "Chhattisgarh"],
+  "47": ["Madhya Pradesh", "Chhattisgarh"],
+  "48": ["Madhya Pradesh", "Chhattisgarh"],
+  "49": ["Madhya Pradesh", "Chhattisgarh"],
+  "50": ["Andhra Pradesh", "Telangana"],
+  "51": ["Andhra Pradesh", "Telangana"],
+  "52": ["Andhra Pradesh", "Telangana"],
+  "53": ["Andhra Pradesh", "Telangana"],
+  "56": ["Karnataka"],
+  "57": ["Karnataka"],
+  "58": ["Karnataka"],
+  "59": ["Karnataka"],
+  "60": ["Tamil Nadu", "Puducherry"],
+  "61": ["Tamil Nadu", "Puducherry"],
+  "62": ["Tamil Nadu", "Puducherry"],
+  "63": ["Tamil Nadu", "Puducherry"],
+  "64": ["Tamil Nadu", "Puducherry"],
+  "67": ["Kerala", "Lakshadweep"],
+  "68": ["Kerala", "Lakshadweep"],
+  "69": ["Kerala", "Lakshadweep"],
+  "70": ["West Bengal", "Sikkim", "Andaman and Nicobar Islands"],
+  "71": ["West Bengal", "Sikkim", "Andaman and Nicobar Islands"],
+  "72": ["West Bengal", "Sikkim", "Andaman and Nicobar Islands"],
+  "73": ["West Bengal", "Sikkim", "Andaman and Nicobar Islands"],
+  "74": ["West Bengal", "Sikkim", "Andaman and Nicobar Islands"],
+  "75": ["Odisha"],
+  "76": ["Odisha"],
+  "77": ["Odisha"],
+  "78": ["Assam"],
+  "79": [
+    "Arunachal Pradesh",
+    "Manipur",
+    "Meghalaya",
+    "Mizoram",
+    "Nagaland",
+    "Tripura",
+  ],
+  "80": ["Bihar", "Jharkhand"],
+  "81": ["Bihar", "Jharkhand"],
+  "82": ["Bihar", "Jharkhand"],
+  "83": ["Bihar", "Jharkhand"],
+  "84": ["Bihar", "Jharkhand"],
+  "85": ["Bihar", "Jharkhand"],
+  "90": [],
+  "91": [],
+  "92": [],
+  "93": [],
+  "94": [],
+  "95": [],
+  "96": [],
+  "97": [],
+  "98": [],
+  "99": [],
+});
+
+const BASIC_PIN_REGEX = /^[1-9][0-9]{5}$/;
+
+function normalizeStateName(state: string) {
+  return state
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function validateIndianPincode(
+  pincode: string,
+  selectedState: string
+) {
+  if (!BASIC_PIN_REGEX.test(pincode)) {
+    return "Pincode must be exactly 6 digits and can not start with 0";
+  }
+
+  const states = PINCODE_STATE_MAP[pincode.slice(0, 2)];
+
+  if (!states) {
+    return "Pincode prefix is invalid or unallocated";
+  }
+
+  if (
+    !states.some(
+      (state) =>
+        normalizeStateName(state) ===
+        normalizeStateName(selectedState)
+    )
+  ) {
+    return "Pincode does not match the selected state";
+  }
+
+  return null;
+}
 
 export default function RegisterPage() {
   const t = useTranslations("Register");
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    mobile_number: "",
-    adhaar_number: "",
-    state: "",
-    city: "",
-    pincode: "",
-    address: "",
-  });
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [errorMsg, setErrorMsg] = useState("");
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  // ==========================================
+  // FORM STATE
+  // ==========================================
+
+  const [form, setForm] =
+    useState<FormData>(initialForm);
+
+  const [errors, setErrors] =
+    useState<FormErrors>({});
+
+  const [status, setStatus] = useState<
+    "idle" | "loading"
+  >("idle");
+
+  // ==========================================
+  // STATE & CITY
+  // ==========================================
+
+  const [states, setStates] = useState<string[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+
+  const [loadingStates, setLoadingStates] =
+    useState(false);
+
+  const [loadingCities, setLoadingCities] =
+    useState(false);
+
+  // ==========================================
+  // FIELD REFS
+  // ==========================================
+
+  const nameRef =
+    useRef<HTMLInputElement>(null);
+
+  const emailRef =
+    useRef<HTMLInputElement>(null);
+
+  const mobileRef =
+    useRef<HTMLInputElement>(null);
+
+  const aadhaarRef =
+    useRef<HTMLInputElement>(null);
+
+  const stateRef =
+    useRef<HTMLDivElement>(null);
+
+  const cityRef =
+    useRef<HTMLDivElement>(null);
+
+  const pincodeRef =
+    useRef<HTMLInputElement>(null);
+
+  const addressRef =
+    useRef<HTMLTextAreaElement>(null);
+
+  // ==========================================
+  // FETCH STATES
+  // ==========================================
+
+  useEffect(() => {
+    const fetchStates = async () => {
+      setLoadingStates(true);
+
+      try {
+        const response = await fetch(
+          "https://countriesnow.space/api/v0.1/countries/states",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              country: "India",
+            }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || data.error) {
+          throw new Error(
+            "Failed to fetch states"
+          );
+        }
+
+        const stateNames = data.data.states.map(
+          (state: { name: string }) =>
+            state.name
+        );
+
+        setStates(stateNames);
+      } catch (error) {
+        console.error(
+          "Error fetching states:",
+          error
+        );
+
+        toast.error(
+          "Unable to load states. Please refresh the page."
+        );
+      } finally {
+        setLoadingStates(false);
+      }
+    };
+
+    fetchStates();
+  }, []);
+
+  // ==========================================
+  // VALIDATION
+  // ==========================================
+
+  const validateForm = (): FormErrors => {
+    const newErrors: FormErrors = {};
+
+    // Name
+    if (!form.name.trim()) {
+      newErrors.name = "Name is required";
+    } else if (form.name.trim().length < 2) {
+      newErrors.name =
+        "Name must be at least 2 characters";
+    } else if (
+      !/^[A-Za-z\s]+$/.test(
+        form.name.trim()
+      )
+    ) {
+      newErrors.name =
+        "Name can only contain letters";
+    }
+
+    // Email
+    if (!form.email.trim()) {
+      newErrors.email =
+        "Email is required";
+    } else if (
+      !/^[^\s@]+@(gmail\.com|zohomail\.in|yahoo\.com|icloud\.com|outlook\.com|proton\.me|protonmail\.com)$/i.test(
+        form.email.trim()
+      )
+    ) {
+      newErrors.email =
+        "Please enter a valid email address";
+    }
+
+    // Mobile
+    if (!form.mobile_number) {
+      newErrors.mobile_number =
+        "Mobile number is required";
+    } else if (form.mobile_number.length !== 10) {
+      newErrors.mobile_number =
+        "Mobile number must be 10 digits";
+    } else if (!/^[6-9]\d{9}$/.test(form.mobile_number)) {
+      newErrors.mobile_number =
+        "Invalid mobile number";
+    }
+
+    // Aadhaar
+    if (!form.adhaar_number) {
+      newErrors.adhaar_number =
+        "Aadhaar number is required";
+    } else if (
+      !/^\d{12}$/.test(
+        form.adhaar_number
+      )
+    ) {
+      newErrors.adhaar_number =
+        "Aadhaar number must be exactly 12 digits";
+    }
+
+    // State
+    if (!form.state) {
+      newErrors.state =
+        "Please select a state";
+    }
+
+    // City
+    if (!form.city) {
+      newErrors.city =
+        "Please select a city";
+    }
+
+    // Pincode
+    if (!form.pincode) {
+      newErrors.pincode =
+        "Pincode is required";
+    } else {
+      const pincodeError = validateIndianPincode(
+        form.pincode,
+        form.state
+      );
+
+      if (pincodeError) {
+        newErrors.pincode = pincodeError;
+      }
+    }
+
+    // Address
+    if (!form.address.trim()) {
+      newErrors.address =
+        "Address is required";
+    } else if (
+      form.address.trim().length < 10
+    ) {
+      newErrors.address =
+        "Address must be at least 10 characters";
+    }
+
+    return newErrors;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus("loading");
-    setErrorMsg("");
+  // ==========================================
+  // FIRST INVALID FIELD
+  // AUTO FOCUS + AUTO SCROLL
+  // ==========================================
 
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/v1/register/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+  const focusFirstInvalidField = (
+    validationErrors: FormErrors
+  ) => {
+    const fields: {
+      field: keyof FormData;
+      ref: React.RefObject<
+        HTMLElement | null
+      >;
+    }[] = [
+      {
+        field: "name",
+        ref: nameRef,
+      },
+      {
+        field: "email",
+        ref: emailRef,
+      },
+      {
+        field: "mobile_number",
+        ref: mobileRef,
+      },
+      {
+        field: "adhaar_number",
+        ref: aadhaarRef,
+      },
+      {
+        field: "state",
+        ref: stateRef,
+      },
+      {
+        field: "city",
+        ref: cityRef,
+      },
+      {
+        field: "pincode",
+        ref: pincodeRef,
+      },
+      {
+        field: "address",
+        ref: addressRef,
+      },
+    ];
+
+    const firstInvalidField =
+      fields.find(
+        ({ field }) =>
+          validationErrors[field]
+      );
+
+    if (!firstInvalidField) {
+      return;
+    }
+
+    const element =
+      firstInvalidField.ref.current;
+
+    if (!element) {
+      return;
+    }
+
+    setTimeout(() => {
+      element.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
       });
 
-      const data = await res.json().catch(() => ({}));
-      const backendMessage = data?.detail?.message || data?.message || "";
-
-      if (!res.ok || data?.status === "error" || data?.detail?.status === "error") {
-        setErrorMsg(
-          backendMessage || (res.status === 409 ? t("errorDuplicate") : t("errorGeneral"))
-        );
-        setStatus("error");
+      // Normal input / textarea
+      if (
+        element instanceof
+          HTMLInputElement ||
+        element instanceof
+          HTMLTextAreaElement
+      ) {
+        element.focus();
         return;
       }
 
-      setStatus("success");
-      setForm({
-        name: "",
-        email: "",
-        mobile_number: "",
-        adhaar_number: "",
-        state: "",
-        city: "",
-        pincode: "",
-        address: "",
-      });
-    } catch (err) {
-      setErrorMsg(t("errorGeneral"));
-      setStatus("error");
+      // Custom searchable dropdown
+      const button =
+        element.querySelector("button");
+
+      button?.focus();
+    }, 100);
+  };
+
+  // ==========================================
+  // NORMAL INPUT CHANGE
+  // ==========================================
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement
+    >
+  ) => {
+    const { name, value } = e.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    setErrors((prev) => ({
+      ...prev,
+      [name]: "",
+    }));
+
+    setStatus("idle");
+  };
+
+  // ==========================================
+  // STATE CHANGE
+  // ==========================================
+
+  const handleStateChange = async (
+    selectedState: string
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      state: selectedState,
+      city: "",
+    }));
+
+    setCities([]);
+
+    setErrors((prev) => ({
+      ...prev,
+      state: "",
+      city: "",
+    }));
+
+    setStatus("idle");
+
+    if (!selectedState) {
+      return;
+    }
+
+    setLoadingCities(true);
+
+    try {
+      const response = await fetch(
+        "https://countriesnow.space/api/v0.1/countries/state/cities",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            country: "India",
+            state: selectedState,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(
+          "Failed to fetch cities"
+        );
+      }
+
+      setCities(data.data || []);
+    } catch (error) {
+      console.error(
+        "Error fetching cities:",
+        error
+      );
+
+      setErrors((prev) => ({
+        ...prev,
+        city:
+          "Unable to load cities. Please try again.",
+      }));
+
+      toast.error(
+        "Unable to load cities. Please try again."
+      );
+    } finally {
+      setLoadingCities(false);
     }
   };
 
+  // ==========================================
+  // CITY CHANGE
+  // ==========================================
+
+  const handleCityChange = (
+    selectedCity: string
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      city: selectedCity,
+    }));
+
+    setErrors((prev) => ({
+      ...prev,
+      city: "",
+    }));
+
+    setStatus("idle");
+  };
+
+  // ==========================================
+  // SUBMIT
+  // ==========================================
+
+  const handleSubmit = async (
+    e: React.FormEvent
+  ) => {
+    e.preventDefault();
+
+    // Clear previous errors
+    setErrors({});
+
+    // ========================================
+    // FRONTEND VALIDATION
+    // ========================================
+
+    const validationErrors =
+      validateForm();
+
+    if (
+      Object.keys(validationErrors).length >
+      0
+    ) {
+      setErrors(validationErrors);
+
+      // Toast
+      toast.error(
+        "Please fill all required fields correctly."
+      );
+
+      // First invalid field
+      focusFirstInvalidField(
+        validationErrors
+      );
+
+      return;
+    }
+
+    // ========================================
+    // API REQUEST
+    // ========================================
+
+    setStatus("loading");
+
+    try {
+      const res = await fetch(
+        `${BACKEND_URL}/api/v1/register/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(form),
+        }
+      );
+
+      const data =
+        await res.json().catch(() => ({}));
+
+      const backendMessage =
+        data?.detail?.message ||
+        data?.message ||
+        "";
+
+      // ======================================
+      // API ERROR
+      // ======================================
+
+      if (
+        !res.ok ||
+        data?.status === "error" ||
+        data?.detail?.status === "error"
+      ) {
+        const message =
+          backendMessage ||
+          (res.status === 409
+            ? t("errorDuplicate")
+            : t("errorGeneral"));
+
+        toast.error(message);
+
+        setStatus("idle");
+
+        return;
+      }
+
+      // ======================================
+      // SUCCESS
+      // ======================================
+
+      toast.success(
+        "Registration successful!"
+      );
+
+      setStatus("idle");
+
+      setForm(initialForm);
+
+      setCities([]);
+
+      setErrors({});
+    } catch (error) {
+      // ======================================
+      // NETWORK / SERVER ERROR
+      // ======================================
+
+      console.error(
+        "Registration error:",
+        error
+      );
+
+      toast.error(
+        "Unable to connect to server. Please try again."
+      );
+
+      setStatus("idle");
+    }
+  };
+
+  // ==========================================
+  // UI
+  // ==========================================
+
   return (
     <>
+      {/* ======================================
+          TOAST
+      ====================================== */}
+
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            fontSize: "14px",
+            borderRadius: "8px",
+            padding: "12px 16px",
+            maxWidth:
+              "calc(100vw - 32px)",
+          },
+          success: {
+            duration: 4000,
+          },
+          error: {
+            duration: 5000,
+          },
+        }}
+      />
+
       <Header />
-      <section className="max-w-xl mx-auto px-6 py-16">
-        <h1 className="text-3xl font-bold text-green-800 mb-2">{t("title")}</h1>
-        <p className="text-gray-600 mb-8">{t("subtitle")}</p>
 
-        {status === "success" && (
-          <div className="bg-green-100 text-green-800 p-4 rounded-md mb-6">
-            {t("success")}
-          </div>
-        )}
-        {status === "error" && (
-          <div className="bg-red-100 text-red-800 p-4 rounded-md mb-6">
-            ❌ {errorMsg}
-          </div>
-        )}
+      <section className="max-w-xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+        {/* ====================================
+            HEADING
+        ==================================== */}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-green-800 mb-2">
+          {t("title")}
+        </h1>
+
+        <p className="text-gray-600 mb-8 text-sm sm:text-base">
+          {t("subtitle")}
+        </p>
+
+        {/* ====================================
+            FORM
+        ==================================== */}
+
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+          noValidate
+        >
+          {/* ================= NAME ================= */}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t("name")} *
             </label>
+
             <input
+              ref={nameRef}
               type="text"
               name="name"
               value={form.name}
               onChange={handleChange}
               required
-              className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
+              autoComplete="name"
+              className={`w-full border rounded-md px-4 py-2.5 focus:outline-none focus:ring-2 ${
+                errors.name
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-green-600"
+              }`}
             />
+
+            {errors.name && (
+              <p className="text-red-600 text-sm mt-1">
+                {errors.name}
+              </p>
+            )}
           </div>
+
+          {/* ================= EMAIL ================= */}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t("email")} *
             </label>
+
             <input
+              ref={emailRef}
               type="email"
               name="email"
               value={form.email}
               onChange={handleChange}
               required
-              className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
+              autoComplete="email"
+              className={`w-full border rounded-md px-4 py-2.5 focus:outline-none focus:ring-2 ${
+                errors.email
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-green-600"
+              }`}
             />
+
+            {errors.email && (
+              <p className="text-red-600 text-sm mt-1">
+                {errors.email}
+              </p>
+            )}
           </div>
+
+          {/* ================= MOBILE ================= */}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t("mobile_number")} *
             </label>
+
             <input
+              ref={mobileRef}
               type="tel"
               name="mobile_number"
               value={form.mobile_number}
-              onChange={handleChange}
+              onChange={(e) => {
+                const value =
+                  e.target.value.replace(
+                    /\D/g,
+                    ""
+                  );
+
+                if (value.length <= 10) {
+                  setForm((prev) => ({
+                    ...prev,
+                    mobile_number: value,
+                  }));
+
+                  setErrors((prev) => ({
+                    ...prev,
+                    mobile_number: "",
+                  }));
+
+                  setStatus("idle");
+                }
+              }}
+              maxLength={10}
+              inputMode="numeric"
               required
-              className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
+              autoComplete="tel"
+              placeholder="Enter 10 digit mobile number"
+              className={`w-full border rounded-md px-4 py-2.5 focus:outline-none focus:ring-2 ${
+                errors.mobile_number
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-green-600"
+              }`}
             />
+
+            {errors.mobile_number && (
+              <p className="text-red-600 text-sm mt-1">
+                {errors.mobile_number}
+              </p>
+            )}
           </div>
+
+          {/* ================= AADHAAR ================= */}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t("adhaar_number")} *
             </label>
+
             <input
+              ref={aadhaarRef}
               type="text"
               name="adhaar_number"
               value={form.adhaar_number}
-              onChange={handleChange}
+              onChange={(e) => {
+                const value =
+                  e.target.value.replace(
+                    /\D/g,
+                    ""
+                  );
+
+                if (value.length <= 12) {
+                  setForm((prev) => ({
+                    ...prev,
+                    adhaar_number: value,
+                  }));
+
+                  setErrors((prev) => ({
+                    ...prev,
+                    adhaar_number: "",
+                  }));
+
+                  setStatus("idle");
+                }
+              }}
+              maxLength={12}
+              inputMode="numeric"
               required
-              className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
+              autoComplete="off"
+              placeholder="Enter 12 digit Aadhaar number"
+              className={`w-full border rounded-md px-4 py-2.5 focus:outline-none focus:ring-2 ${
+                errors.adhaar_number
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-green-600"
+              }`}
             />
+
+            {errors.adhaar_number && (
+              <p className="text-red-600 text-sm mt-1">
+                {errors.adhaar_number}
+              </p>
+            )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("state")} *
-              </label>
-              <input
-                type="text"
-                name="state"
+          {/* ================= STATE + CITY ================= */}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* STATE */}
+
+            <div ref={stateRef}>
+              <SearchableDropdown
+                label={t("state")}
                 value={form.state}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
+                options={states}
+                onChange={handleStateChange}
+                placeholder="Select State"
+                loading={loadingStates}
+                error={errors.state}
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("city")} *
-              </label>
-              <input
-                type="text"
-                name="city"
+            {/* CITY */}
+
+            <div ref={cityRef}>
+              <SearchableDropdown
+                label={t("city")}
                 value={form.city}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
+                options={cities}
+                onChange={handleCityChange}
+                placeholder={
+                  !form.state
+                    ? "First Select State"
+                    : "Select City"
+                }
+                disabled={!form.state}
+                loading={loadingCities}
+                error={errors.city}
               />
             </div>
           </div>
+
+          {/* ================= PINCODE ================= */}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t("pincode")} *
             </label>
+
             <input
+              ref={pincodeRef}
               type="text"
               name="pincode"
               value={form.pincode}
-              onChange={handleChange}
+              onChange={(e) => {
+                const value =
+                  e.target.value.replace(
+                    /\D/g,
+                    ""
+                  );
+
+                if (value.length <= 6) {
+                  setForm((prev) => ({
+                    ...prev,
+                    pincode: value,
+                  }));
+
+                  setErrors((prev) => ({
+                    ...prev,
+                    pincode: "",
+                  }));
+
+                  setStatus("idle");
+                }
+              }}
+              maxLength={6}
+              inputMode="numeric"
               required
-              className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
+              autoComplete="postal-code"
+              placeholder="Enter 6 digit pincode"
+              className={`w-full border rounded-md px-4 py-2.5 focus:outline-none focus:ring-2 ${
+                errors.pincode
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-green-600"
+              }`}
             />
+
+            {errors.pincode && (
+              <p className="text-red-600 text-sm mt-1">
+                {errors.pincode}
+              </p>
+            )}
           </div>
+
+          {/* ================= ADDRESS ================= */}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t("address")} *
             </label>
+
             <textarea
+              ref={addressRef}
               name="address"
               value={form.address}
               onChange={handleChange}
               rows={3}
               required
-              className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
+              autoComplete="street-address"
+              placeholder="Enter your complete address"
+              className={`w-full border rounded-md px-4 py-2.5 focus:outline-none focus:ring-2 ${
+                errors.address
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-green-600"
+              }`}
             />
+
+            {errors.address && (
+              <p className="text-red-600 text-sm mt-1">
+                {errors.address}
+              </p>
+            )}
           </div>
+
+          {/* ================= SUBMIT ================= */}
 
           <button
             type="submit"
             disabled={status === "loading"}
-            className="w-full bg-green-700 hover:bg-green-800 transition text-white py-3 rounded-md font-semibold disabled:opacity-60"
+            className="w-full bg-green-700 hover:bg-green-800 active:bg-green-900 transition text-white py-3 rounded-md font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {status === "loading" ? t("submitting") : t("submit")}
+            {status === "loading"
+              ? t("submitting")
+              : t("submit")}
           </button>
         </form>
       </section>
+
       <Footer />
     </>
   );
