@@ -100,7 +100,7 @@ export default function SearchableDropdown({
         </span>
 
         <svg
-          className={`w-4 h-4 flex-shrink-0 ml-2 transition-transform ${
+          className={`w-4 h-4 shrink-0 ml-2 transition-transform ${
             isOpen ? "rotate-180" : ""
           }`}
           fill="none"
@@ -125,7 +125,7 @@ export default function SearchableDropdown({
 
       {/* Dropdown Menu */}
       {isOpen && !disabled && (
-        <div className="absolute left-0 right-0 top-full mt-1 z-[100]">
+        <div className="absolute left-0 right-0 top-full mt-1 z-100">
           <div className="bg-white border border-gray-200 rounded-md shadow-xl overflow-hidden">
             {/* Search */}
             <div className="p-2 border-b bg-white">

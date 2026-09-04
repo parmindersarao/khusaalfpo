@@ -12,9 +12,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SearchableDropdown from "@/components/SearchableDropdown";
 
-const BACKEND_URL =
-  process.env.BACKEND_URL ||
-  "http://127.0.0.1:8000";
+const BACKEND_URL = process.env.BACKEND_URL ?? "";
 
 type FormData = {
   name: string;
@@ -41,6 +39,133 @@ const initialForm: FormData = {
   pincode: "",
   address: "",
 };
+
+const PINCODE_STATE_MAP: Readonly<
+  Record<string, readonly string[]>
+> = Object.freeze({
+  "11": ["Delhi"],
+  "12": ["Haryana"],
+  "13": ["Haryana"],
+  "14": ["Punjab"],
+  "15": ["Punjab"],
+  "16": ["Chandigarh"],
+  "17": ["Himachal Pradesh"],
+  "18": ["Jammu and Kashmir", "Ladakh"],
+  "19": ["Jammu and Kashmir", "Ladakh"],
+  "20": ["Uttar Pradesh", "Uttarakhand"],
+  "21": ["Uttar Pradesh", "Uttarakhand"],
+  "22": ["Uttar Pradesh", "Uttarakhand"],
+  "23": ["Uttar Pradesh", "Uttarakhand"],
+  "24": ["Uttar Pradesh", "Uttarakhand"],
+  "25": ["Uttar Pradesh", "Uttarakhand"],
+  "26": ["Uttar Pradesh", "Uttarakhand"],
+  "27": ["Uttar Pradesh", "Uttarakhand"],
+  "28": ["Uttar Pradesh", "Uttarakhand"],
+  "30": ["Rajasthan"],
+  "31": ["Rajasthan"],
+  "32": ["Rajasthan"],
+  "33": ["Rajasthan"],
+  "34": ["Rajasthan"],
+  "36": ["Gujarat", "Dadra and Nagar Haveli and Daman and Diu"],
+  "37": ["Gujarat", "Dadra and Nagar Haveli and Daman and Diu"],
+  "38": ["Gujarat", "Dadra and Nagar Haveli and Daman and Diu"],
+  "39": ["Gujarat", "Dadra and Nagar Haveli and Daman and Diu"],
+  "40": ["Maharashtra", "Goa"],
+  "41": ["Maharashtra", "Goa"],
+  "42": ["Maharashtra", "Goa"],
+  "43": ["Maharashtra", "Goa"],
+  "44": ["Maharashtra", "Goa"],
+  "45": ["Madhya Pradesh", "Chhattisgarh"],
+  "46": ["Madhya Pradesh", "Chhattisgarh"],
+  "47": ["Madhya Pradesh", "Chhattisgarh"],
+  "48": ["Madhya Pradesh", "Chhattisgarh"],
+  "49": ["Madhya Pradesh", "Chhattisgarh"],
+  "50": ["Andhra Pradesh", "Telangana"],
+  "51": ["Andhra Pradesh", "Telangana"],
+  "52": ["Andhra Pradesh", "Telangana"],
+  "53": ["Andhra Pradesh", "Telangana"],
+  "56": ["Karnataka"],
+  "57": ["Karnataka"],
+  "58": ["Karnataka"],
+  "59": ["Karnataka"],
+  "60": ["Tamil Nadu", "Puducherry"],
+  "61": ["Tamil Nadu", "Puducherry"],
+  "62": ["Tamil Nadu", "Puducherry"],
+  "63": ["Tamil Nadu", "Puducherry"],
+  "64": ["Tamil Nadu", "Puducherry"],
+  "67": ["Kerala", "Lakshadweep"],
+  "68": ["Kerala", "Lakshadweep"],
+  "69": ["Kerala", "Lakshadweep"],
+  "70": ["West Bengal", "Sikkim", "Andaman and Nicobar Islands"],
+  "71": ["West Bengal", "Sikkim", "Andaman and Nicobar Islands"],
+  "72": ["West Bengal", "Sikkim", "Andaman and Nicobar Islands"],
+  "73": ["West Bengal", "Sikkim", "Andaman and Nicobar Islands"],
+  "74": ["West Bengal", "Sikkim", "Andaman and Nicobar Islands"],
+  "75": ["Odisha"],
+  "76": ["Odisha"],
+  "77": ["Odisha"],
+  "78": ["Assam"],
+  "79": [
+    "Arunachal Pradesh",
+    "Manipur",
+    "Meghalaya",
+    "Mizoram",
+    "Nagaland",
+    "Tripura",
+  ],
+  "80": ["Bihar", "Jharkhand"],
+  "81": ["Bihar", "Jharkhand"],
+  "82": ["Bihar", "Jharkhand"],
+  "83": ["Bihar", "Jharkhand"],
+  "84": ["Bihar", "Jharkhand"],
+  "85": ["Bihar", "Jharkhand"],
+  "90": [],
+  "91": [],
+  "92": [],
+  "93": [],
+  "94": [],
+  "95": [],
+  "96": [],
+  "97": [],
+  "98": [],
+  "99": [],
+});
+
+const BASIC_PIN_REGEX = /^[1-9][0-9]{5}$/;
+
+function normalizeStateName(state: string) {
+  return state
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function validateIndianPincode(
+  pincode: string,
+  selectedState: string
+) {
+  if (!BASIC_PIN_REGEX.test(pincode)) {
+    return "Pincode must be exactly 6 digits and can not start with 0";
+  }
+
+  const states = PINCODE_STATE_MAP[pincode.slice(0, 2)];
+
+  if (!states) {
+    return "Pincode prefix is invalid or unallocated";
+  }
+
+  if (
+    !states.some(
+      (state) =>
+        normalizeStateName(state) ===
+        normalizeStateName(selectedState)
+    )
+  ) {
+    return "Pincode does not match the selected state";
+  }
+
+  return null;
+}
 
 export default function RegisterPage() {
   const t = useTranslations("Register");
@@ -180,7 +305,7 @@ export default function RegisterPage() {
       newErrors.email =
         "Email is required";
     } else if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+      !/^[^\s@]+@(gmail\.com|zohomail\.in|yahoo\.com|icloud\.com|outlook\.com|proton\.me|protonmail\.com)$/i.test(
         form.email.trim()
       )
     ) {
@@ -192,13 +317,12 @@ export default function RegisterPage() {
     if (!form.mobile_number) {
       newErrors.mobile_number =
         "Mobile number is required";
-    } else if (
-      !/^[6-9]\d{9}$/.test(
-        form.mobile_number
-      )
-    ) {
+    } else if (form.mobile_number.length !== 10) {
       newErrors.mobile_number =
-        "Mobile number must be 10 digits and start with 6, 7, 8, or 9";
+        "Mobile number must be 10 digits";
+    } else if (!/^[6-9]\d{9}$/.test(form.mobile_number)) {
+      newErrors.mobile_number =
+        "Invalid mobile number";
     }
 
     // Aadhaar
@@ -230,11 +354,15 @@ export default function RegisterPage() {
     if (!form.pincode) {
       newErrors.pincode =
         "Pincode is required";
-    } else if (
-      !/^\d{6}$/.test(form.pincode)
-    ) {
-      newErrors.pincode =
-        "Pincode must be exactly 6 digits";
+    } else {
+      const pincodeError = validateIndianPincode(
+        form.pincode,
+        form.state
+      );
+
+      if (pincodeError) {
+        newErrors.pincode = pincodeError;
+      }
     }
 
     // Address
