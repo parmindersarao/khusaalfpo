@@ -56,7 +56,6 @@ Expected response:
 ```json
 {"status":"ok","message":"Connected to FastAPI backend successfully!"}
 ```
-
 If you see that JSON, the backend is working.
 
 ---
