@@ -18,5 +18,5 @@ export interface Customer {
 }
 
 export interface CustomerWithStatus extends Customer {
-  status: "Active" | "Pending";
+  status: "Registered" | "Pending";
 }
