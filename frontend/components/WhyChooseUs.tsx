@@ -1,9 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { GraduationCap, Globe2, HeartHandshake, Users } from "lucide-react";
+import { Snowflake, ShieldCheck, Users, Dna } from "lucide-react";
 
-const icons = [GraduationCap, Globe2, HeartHandshake, Users];
+const icons = [Users, Dna, Snowflake, ShieldCheck, ];
 
 export default function WhyChooseUs() {
   const t = useTranslations("WhyChooseUs");
@@ -29,11 +29,14 @@ export default function WhyChooseUs() {
 
   return (
     <section id="about" className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
-      <h2 className="text-xl sm:text-3xl font-bold text-green-800 mb-6 sm:mb-10">
+      <h2 className="text-xl sm:text-3xl font-bold text-green-800 mb-1 sm:mb-1">
         {t("title")}
       </h2>
+      <p className="mt-1 text-sm text-stone-500 sm:mb-6">
+          {t("subtitle")}
+        </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-x-10 sm:gap-y-8">
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-x-10 sm:gap-y-8">
         {items.map((item, index) => {
           const Icon = icons[index];
           return (

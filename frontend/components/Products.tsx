@@ -2,25 +2,8 @@
 
 import { useRef, useEffect, useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
-
-const products = [
-  {
-    id: 1,
-    name: "Maxistart",
-    description:
-      "Maxistart is a dairy nutrition supplement that supports early rumen development, improves feed intake, and helps young calves and cattle grow steadily with better digestion and stronger performance.",
-    contact: "+91 98765 43210",
-    image: "/products/Bag-Denkamilk-Maxistart.webp",
-  },
-  {
-    id: 2,
-    name: "Bio Fertilizer Pack",
-    description:
-      "Bio Fertilizer Pack is a natural soil-enrich product that supports healthy root development, improves nutrient uptake, and encourages stronger crop growth with better soil vitality.",
-    contact: "+91 98765 43210",
-    image: "/products/Packshot-Exolium-Skin-protection-spray.png",
-  },
-];
+import Link from "next/link";
+import { PRODUCTS, Product } from "@/data/products";
 
 // Auto-scroll speed: pixels moved per frame. Lower = slower.
 const AUTO_SCROLL_SPEED = 0.6;
@@ -29,7 +12,8 @@ const RESUME_DELAY_AFTER_CLICK = 2500;
 
 export default function Products() {
   const t = useTranslations("Products");
-  const [selectedProduct, setSelectedProduct] = useState<(typeof products)[number] | null>(null);
+  const nav = useTranslations("Nav");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isPausedRef = useRef(false);
   const rafIdRef = useRef<number | null>(null);
@@ -85,6 +69,13 @@ export default function Products() {
     });
   };
 
+  const getWhatsAppLink = (productName: string) => {
+    const message = encodeURIComponent(
+      `Hello Khushal FPO, I would like to inquire about "${productName}". Please share pricing and availability.`
+    );
+    return `https://wa.me/919417700071?text=${message}`;
+  };
+
   return (
     <section id="services" className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
       <div className="flex items-center justify-between mb-5 sm:mb-8">
@@ -120,7 +111,30 @@ export default function Products() {
         onTouchEnd={pauseTemporarily}
         className="flex gap-4 overflow-x-auto snap-x snap-proximity pb-2 hide-scrollbar"
       >
-        {products.map((product) => (
+        <div className="snap-start shrink-0 w-[62%] xs:w-[55%] sm:w-[45%] md:w-[23%] bg-green-50 rounded-lg shadow-md overflow-hidden border border-green-100">
+          <div className="relative aspect-square w-full overflow-hidden bg-green-50">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/products/tyrol.png"
+              alt="CRV Bovine Genetics"
+              className="h-full w-full object-contain p-2"
+              loading="lazy"
+            />
+          </div>
+          <div className="p-3 sm:p-4">
+            <h3 className="mb-3 text-center text-sm font-semibold text-gray-800 sm:text-base">
+              {nav("genetics")}
+            </h3>
+            <Link
+              href="/genetics"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-green-700 py-2 text-xs font-bold text-white transition hover:bg-green-800 sm:text-sm"
+            >
+              Explore All CRV Bulls &rarr;
+            </Link>
+          </div>
+        </div>
+
+        {PRODUCTS.map((product) => (
           <div
             key={product.id}
             className="snap-start shrink-0 w-[62%] xs:w-[55%] sm:w-[45%] md:w-[23%] bg-white rounded-lg shadow-md overflow-hidden border border-gray-100"
@@ -172,13 +186,33 @@ export default function Products() {
             </div>
 
             <p className="text-sm sm:text-base text-gray-700 leading-6">
-              {selectedProduct.description}
+              {selectedProduct.shortDesc}
             </p>
 
-            <div className="mt-4 rounded-lg bg-green-50 p-3 text-sm text-green-900">
-              <span className="font-semibold">Contact for more info: </span>
-              {selectedProduct.contact}
+            <div className="mt-4 flex flex-col gap-3 rounded-lg bg-green-50 p-3 text-sm text-green-900 sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                <span className="font-semibold">Contact for more info: </span>
+                +91 94177 00071
+              </span>
+              <a
+                href={getWhatsAppLink(selectedProduct.name)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center rounded-md bg-green-700 px-3 py-2 font-semibold text-white transition hover:bg-green-800"
+              >
+                WhatsApp Inquiry
+              </a>
             </div>
+
+            {selectedProduct.pdfUrl && (
+              <a
+                href={selectedProduct.pdfUrl}
+                download={selectedProduct.pdfFileName}
+                className="mt-4 inline-flex w-full items-center justify-center rounded-md border border-green-700 px-3 py-2 text-sm font-semibold text-green-800 transition hover:bg-green-50"
+              >
+                Download Brochure
+              </a>
+            )}
 
             <button
               onClick={() => setSelectedProduct(null)}
