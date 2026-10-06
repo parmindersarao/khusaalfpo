@@ -15,7 +15,9 @@ export default function Header() {
         {href: `/${locale}`, label: t("home")},
         {href: `/${locale}#about`, label: t("about")},
         {href: `/${locale}#services`, label: t("Products")},
+         {href: `/${locale}/genetics`, label: t('genetics')},
         {href: `/${locale}/register`, label: t('register')},
+       
     ];
 
     return(
