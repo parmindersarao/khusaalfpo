@@ -17,10 +17,10 @@ export default function Hero() {
       }}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 text-white w-full">
-        <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold leading-snug sm:leading-tight mb-3 sm:mb-4">
-          {t("title1")} <br /> {t("title2")}
+        <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold leading-snug sm:leading-tight mb-3 sm:mb-4">
+          {t("title1")} <br /> {t("title2")} <br /> {t("title3")}
         </h1>
-        <p className="text-sm sm:text-lg md:text-xl text-green-100 mb-6 sm:mb-8 max-w-xl">
+        <p className="text-sm sm:text-lg md:text-xl text-green-100 mb-6 sm:mb-8 max-w-2xl">
           {t("subtitle")}
         </p>
         <Link

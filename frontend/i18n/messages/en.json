@@ -4,12 +4,14 @@
     "home": "Home",
     "about": "About",
     "Products": "Products",
-    "register": "Register"
+    "register": "Register",
+    "genetics": "Bovine Genetics (CRV)"
   },
   "Hero": {
-    "title1": "Growing Fresh,",
-    "title2": "Farming Smart",
-    "subtitle": "Join our community of modern farmers using sustainable techniques to grow better crops and build a healthier future.",
+    "title1": "Empowering Farmers",
+    "title2": "with Global Animal Genetics",
+    "title3": "and Premium Feed Solutions",
+    "subtitle": "Join our community of modern farmers, use sustainable techniques to grow better crops, improve livestock health, and build a healthier future.",
     "cta": "Register Now"
   },
   "About": {
@@ -59,14 +61,15 @@
   },
   "WhyChooseUs": {
     "title": "Why Choose Us?",
-    "item1Title": "Expert Guidance",
-    "item1Desc": "With years of experience in the honey and dairy industry, we offer expert guidance and practical solutions that cater to the unique needs of our members.",
-    "item2Title": "Access to Global Markets",
-    "item2Desc": "Our association opens doors to local and international markets, providing greater sales opportunities and helping producers grow their businesses.",
-    "item3Title": "Holistic Approach",
-    "item3Desc": "We not only focus on the technical side of honey and dairy production but also emphasize the well-being of farmers and their families, creating a positive impact on their lives.",
-    "item4Title": "Strong Network",
-    "item4Desc": "Our members are part of a supportive network that encourages collaboration, learning, and mutual growth. Being part of the Khushaal Honey & Dairy Producers Association means being part of a larger movement to uplift rural communities."
+    "subtitle": "Direct access to global livestock biotechnology and cooperative member benefits.",
+    "item1Title": "100% Farmer-Owned Cooperative",
+    "item1Desc": "Registered FPO under NABARD and SFAC guidelines. Bulk discounts, subsidies, and patronage profits stay with member farmers.",
+    "item2Title": "Authorized CRV Genetics",
+    "item2Desc": "Directly imported bovine semen straws from the Netherlands & USA with verified high TPI, milk yield, and fertility indexes.",
+    "item3Title": "-196°C Cryogenic Cold Chain",
+    "item3Desc": "Liquid nitrogen cold-chain transit maintained from international laboratories directly to your farm gate.",
+    "item4Title": "Antibiotic-Free Claw Health",
+    "item4Desc": "Exclusive distributor of Kanters Exolium chelated hoof care for effective Mortellaro prevention with zero milk discard."
   },
   "ConnectWithUs": {
     "title": "Connect With Us",
@@ -75,5 +78,11 @@
     "stopVideo": "Stop video",
     "followUs": "Follow us on Instagram",
     "instaImageAlt": "Instagram post {index}"
-  }
+  },
+  "Nav": {
+  "genetics": "Bovine Genetics (CRV)",
+  "hoofcare": "Hoof Health (Exolium)",
+  "feed": "Calf Nutrition",
+  "register": "Join FPO"
+}
 }
